@@ -530,11 +530,14 @@ footer .hi2{background:var(--gGold);-webkit-background-clip:text;-webkit-text-fi
 
 <script>
 // GOOGLE
-var GOOGLE_CLIENT_ID='624113677743-sfjfek0md63j7leu77og9hihg4315m5q.apps.googleusercontent.com';
-window.onload=function(){if(typeof google!=='undefined'&&google.accounts)google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleLogin})};
+google.accounts.id.initialize({
+  client_id: GOOGLE_CLIENT_ID,
+  callback: handleGoogleLogin
+});
+if(typeof google !== 'undefined') { google.accounts.id.prompt(); }
 function handleGoogleLogin(r){var p=JSON.parse(atob(r.credential.split('.')[1]));showSiteWithUser(p.name,p.picture)}
 document.getElementById('googleLoginBtn').addEventListener('click',function(){
-  if(typeof google!=='undefined'&&GOOGLE_CLIENT_ID!=='YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com')google.accounts.id.prompt();
+ if(typeof google !== 'undefined') { google.accounts.id.prompt(); }
   else alert('⚠️ أضف Client ID الخاص بك لتفعيل Google Login');
 });
 
@@ -646,4 +649,5 @@ function closeM(){document.getElementById('mOv').classList.remove('open');docume
 </script>
 </body>
 </html>
+
 

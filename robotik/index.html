@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>جمعية جيل التكنولوجيا والروبوتيك</title>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Cairo',sans-serif; background:#f5f5f0; color:#1a1a1a; }
+
+    /* ── LOGIN ── */
+    .login-page { position:fixed; inset:0; z-index:999; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; padding:1.5rem; }
+    .login-logo { width:90px; height:90px; border-radius:50%; object-fit:cover; border:3px solid #cc1818; }
+    .login-title { text-align:center; }
+    .login-title h1 { font-size:1.1rem; font-weight:900; color:#1a1a1a; margin-bottom:0.2rem; }
+    .login-title p  { font-size:0.75rem; color:#999; }
+    .login-divider { width:130px; height:3px; background:linear-gradient(90deg,#cc1818,#d4a017,#006233); border-radius:2px; }
+
+    /* divider with text */
+    .or-divider { display:flex; align-items:center; gap:0.7rem; width:270px; }
+    .or-divider::before, .or-divider::after { content:''; flex:1; height:1px; background:#e0e0e0; }
+    .or-divider span { font-size:0.75rem; color:#bbb; white-space:nowrap; }
+
+    /* Google button */
+    .google-btn {
+      width:270px; padding:0.72rem 1rem;
+      background:#fff; border:1.5px solid #ddd; border-radius:6px;
+      display:flex; align-items:center; justify-content:center; gap:0.7rem;
+      cursor:pointer; font-family:'Cairo',sans-serif; font-size:0.9rem; font-weight:600; color:#333;
+      transition:box-shadow 0.2s, border-color 0.2s;
+    }
+    .google-btn:hover { box-shadow:0 2px 10px rgba(0,0,0,0.1); border-color:#bbb; }
+    .google-btn svg { width:20px; height:20px; flex-shrink:0; }
+
+    .login-field { width:270px; }
+    .login-field label { display:block; font-size:0.82rem; font-weight:700; color:#555; margin-bottom:0.35rem; }
+    .login-field input { width:100%; padding:0.7rem 1rem; border:1px solid #ddd; border-radius:6px; font-family:'Cairo',sans-serif; font-size:0.93rem; outline:none; transition:border-color 0.2s; }
+    .login-field input:focus { border-color:#cc1818; }
+    .login-field input::placeholder { color:#bbb; }
+    .login-btn-submit { width:270px; padding:0.8rem; background:#cc1818; color:#fff; border:none; border-radius:6px; font-family:'Cairo',sans-serif; font-size:1rem; font-weight:700; cursor:pointer; transition:background 0.2s; }
+    .login-btn-submit:hover { background:#aa1010; }
+    .login-err { width:270px; padding:0.55rem 1rem; background:#fff5f5; border:1px solid #f5c0c0; border-radius:6px; color:#cc1818; font-size:0.8rem; display:none; }
+    .login-skip { font-size:0.78rem; color:#aaa; cursor:pointer; }
+    .login-skip:hover { color:#cc1818; }
+    .flag-bar { display:flex; width:80px; height:4px; border-radius:3px; overflow:hidden; }
+    .flag-bar span { flex:1; }
+
+    /* ── NAV ── */
+    nav { position:fixed; top:0; width:100%; z-index:100; background:#fff; border-bottom:2px solid #cc1818; padding:0.75rem 2rem; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .nav-brand { display:flex; align-items:center; gap:0.65rem; cursor:pointer; }
+    .nav-logo  { width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #cc1818; }
+    .nav-name  { font-size:0.88rem; font-weight:900; color:#cc1818; }
+    .nav-links { display:flex; gap:0.4rem; list-style:none; }
+    .nav-links button { background:none; border:none; font-family:'Cairo',sans-serif; color:#333; font-weight:700; font-size:0.88rem; cursor:pointer; padding:0.45rem 0.9rem; border-radius:6px; transition:all 0.2s; }
+    .nav-links button:hover  { color:#cc1818; background:#fef0f0; }
+    .nav-links button.active { color:#fff; background:#cc1818; }
+    /* user avatar in nav */
+    .nav-user { display:none; align-items:center; gap:0.5rem; }
+    .nav-user img { width:30px; height:30px; border-radius:50%; border:2px solid #cc1818; object-fit:cover; }
+    .nav-user span { font-size:0.82rem; font-weight:700; color:#333; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    .stripe { height:5px; background:linear-gradient(90deg,#cc1818 33%,#006233 33%,#006233 66%,#d4a017 66%); }
+    .page { display:none; padding-top:70px; min-height:100vh; animation:fadeIn 0.3s ease; }
+    .page.active { display:block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .page-banner { background:linear-gradient(135deg,#1a1a1a,#2a0a0a); padding:2.2rem 2rem; text-align:center; border-bottom:3px solid #cc1818; }
+    .page-banner h2 { font-size:1.7rem; font-weight:900; color:#fff; margin-bottom:0.25rem; }
+    .page-banner p  { font-size:0.84rem; color:#bbb; }
+    .section { padding:3rem 2rem; max-width:1100px; margin:0 auto; }
+
+    /* ── HERO ── */
+    .hero { background:#fff; border-bottom:1px solid #e8e8e8; text-align:center; }
+    .hero-inner { max-width:660px; margin:0 auto; padding:2.5rem 2rem 3rem; }
+    .hero-logo { width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #cc1818; box-shadow:0 4px 18px rgba(204,24,24,0.12); margin-bottom:1.1rem; }
+    .hero h1   { font-size:clamp(1.3rem,3.5vw,1.9rem); font-weight:900; color:#1a1a1a; margin-bottom:0.2rem; line-height:1.3; }
+    .hero-en   { font-size:0.76rem; color:#999; letter-spacing:0.5px; margin-bottom:1.3rem; }
+    .hero-intro { background:#fafaf8; border:1px solid #e8e0d0; border-right:4px solid #cc1818; border-radius:8px; padding:1.1rem 1.4rem; text-align:right; margin-bottom:1.5rem; }
+    .hero-intro p { font-size:0.88rem; color:#444; line-height:1.85; margin-bottom:0.3rem; }
+    .hero-intro p:last-child { margin-bottom:0; }
+    .hero-phone { display:inline-block; margin-top:0.5rem; color:#cc1818; font-weight:700; font-size:0.9rem; direction:ltr; }
+    .hero-btns  { display:flex; gap:0.9rem; justify-content:center; flex-wrap:wrap; }
+    .btn { padding:0.65rem 1.7rem; border-radius:6px; font-family:'Cairo',sans-serif; font-weight:700; font-size:0.9rem; cursor:pointer; border:2px solid transparent; transition:all 0.2s; }
+    .btn-red     { background:#cc1818; color:#fff; border-color:#cc1818; }
+    .btn-red:hover { background:#aa1010; }
+    .btn-outline { background:transparent; color:#cc1818; border-color:#cc1818; }
+    .btn-outline:hover { background:#cc1818; color:#fff; }
+
+    /* ── ROBOTS ── */
+    .robots-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:1.4rem; }
+    .robot-card { background:#fff; border:1px solid #e0e0e0; border-top:3px solid #cc1818; border-radius:10px; padding:1.5rem 1.2rem; text-align:center; cursor:pointer; transition:box-shadow 0.25s,transform 0.25s; }
+    .robot-card:hover { box-shadow:0 6px 22px rgba(0,0,0,0.09); transform:translateY(-4px); }
+    .robot-img-wrap { width:115px; height:115px; border-radius:50%; margin:0 auto 1rem; background:#fafaf8; border:2px solid #e8e0d0; display:flex; align-items:center; justify-content:center; transition:border-color 0.25s; }
+    .robot-card:hover .robot-img-wrap { border-color:#cc1818; }
+    .robot-svg { width:88px; height:88px; transition:transform 0.3s; }
+    .robot-card:hover .robot-svg { transform:scale(1.08); }
+    .robot-card h3 { font-size:1.05rem; font-weight:700; color:#cc1818; margin-bottom:0.5rem; }
+    .robot-card p  { font-size:0.85rem; color:#666; line-height:1.7; }
+    .robot-tag { display:inline-block; margin-top:0.8rem; padding:0.2rem 0.8rem; border-radius:4px; background:#fef0f0; border:1px solid #f0c0c0; color:#cc1818; font-size:0.75rem; font-weight:700; }
+    .click-hint { font-size:0.7rem; color:#bbb; margin-bottom:0.4rem; display:block; }
+
+    /* ── ROBOT MODAL ── */
+    .modal-overlay { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s; padding:1rem; }
+    .modal-overlay.open { opacity:1; pointer-events:all; }
+    .modal { background:#fff; border-radius:12px; max-width:680px; width:100%; max-height:88vh; overflow-y:auto; transform:translateY(18px); transition:transform 0.3s; position:relative; }
+    .modal-overlay.open .modal { transform:translateY(0); }
+    .modal-hd { padding:1.3rem 1.7rem; border-bottom:1px solid #eee; border-top:4px solid #cc1818; border-radius:12px 12px 0 0; display:flex; align-items:center; gap:1rem; }
+    .modal-svg-wrap { width:60px; height:60px; flex-shrink:0; background:#fafaf8; border:1px solid #e8e0d0; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    .modal-svg-wrap svg { width:44px; height:44px; }
+    .modal-hd h2  { font-size:1.2rem; font-weight:900; color:#1a1a1a; margin-bottom:0.12rem; }
+    .modal-hd .ms { font-size:0.78rem; color:#999; }
+    .modal-x { position:absolute; top:0.9rem; left:0.9rem; width:28px; height:28px; border-radius:50%; background:#f5f5f5; border:1px solid #ddd; color:#555; cursor:pointer; font-size:0.82rem; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+    .modal-x:hover { background:#fef0f0; color:#cc1818; border-color:#cc1818; }
+    .modal-bd { padding:1.5rem 1.7rem; }
+    .modal-intro { font-size:0.88rem; line-height:1.85; color:#444; margin-bottom:1.5rem; padding:0.9rem 1.1rem; background:#fafaf8; border-right:3px solid #cc1818; border-radius:0 6px 6px 0; }
+    .spec-head { font-size:0.9rem; font-weight:700; color:#1a1a1a; margin-bottom:0.75rem; padding-bottom:0.3rem; border-bottom:1px solid #eee; }
+    .specs-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); gap:0.6rem; margin-bottom:1.5rem; }
+    .spec-item { background:#fafaf8; border:1px solid #e8e8e8; border-radius:6px; padding:0.7rem 0.9rem; }
+    .spec-lbl { font-size:0.68rem; color:#aaa; font-weight:700; margin-bottom:0.25rem; text-transform:uppercase; }
+    .spec-val { font-size:0.84rem; color:#222; font-weight:600; }
+    .use-tags { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.6rem; }
+    .use-tag  { padding:0.25rem 0.75rem; border-radius:4px; background:#fef0f0; border:1px solid #f0c0c0; color:#cc1818; font-size:0.77rem; font-weight:600; }
+
+    /* ── ACTIVITIES ── */
+    .act-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1.4rem; }
+    .act-card { background:#fff; border:1px solid #e8e8e8; border-top:3px solid #cc1818; border-radius:12px; overflow:hidden; cursor:pointer; transition:box-shadow 0.25s,transform 0.25s; }
+    .act-card:hover { box-shadow:0 8px 28px rgba(0,0,0,0.13); transform:translateY(-5px); }
+    .act-slider { position:relative; height:200px; background:#222; overflow:hidden; }
+    .act-slider-imgs { display:flex; height:100%; transition:transform 0.4s ease; }
+    .act-slider-imgs img { min-width:100%; height:200px; object-fit:cover; display:block; }
+    .act-open-bar { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(0,0,0,0.6)); color:#fff; font-size:0.75rem; font-weight:700; text-align:center; padding:0.6rem; opacity:0; transition:opacity 0.25s; z-index:2; }
+    .act-card:hover .act-open-bar { opacity:1; }
+    .act-info { padding:0.9rem 1.1rem; border-top:1px solid #eee; }
+    .act-info h4 { font-size:0.93rem; font-weight:700; color:#1a1a1a; margin-bottom:0.2rem; }
+    .act-info p  { font-size:0.78rem; color:#888; line-height:1.6; }
+
+    /* ── LIGHTBOX ── */
+    .lb-ov { position:fixed; inset:0; z-index:700; background:rgba(0,0,0,0.93); display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+    .lb-ov.open { opacity:1; pointer-events:all; }
+    .lb-head { color:#fff; font-size:1rem; font-weight:700; margin-bottom:0.9rem; }
+    .lb-wrap { position:relative; display:flex; align-items:center; justify-content:center; }
+    .lb-wrap img { max-width:88vw; max-height:68vh; border-radius:10px; object-fit:contain; box-shadow:0 8px 40px rgba(0,0,0,0.7); display:block; }
+    .lb-btn { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.15); border:none; color:#fff; font-size:1.7rem; width:46px; height:46px; border-radius:50%; cursor:pointer; transition:background 0.2s; display:flex; align-items:center; justify-content:center; }
+    .lb-btn:hover { background:#cc1818; }
+    .lb-prev { right:-58px; }
+    .lb-next { left:-58px; }
+    .lb-dots { display:flex; gap:8px; margin-top:1rem; }
+    .lb-dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.3); border:none; cursor:pointer; transition:background 0.2s; }
+    .lb-dot.on { background:#fff; }
+    .lb-info { color:rgba(255,255,255,0.55); font-size:0.8rem; margin-top:0.5rem; }
+    .lb-close { position:absolute; top:1rem; left:1rem; background:rgba(255,255,255,0.12); border:none; color:#fff; width:38px; height:38px; border-radius:50%; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s; }
+    .lb-close:hover { background:#cc1818; }
+
+    /* ── TEAM ── */
+    .team-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:1.3rem; }
+    .team-card { background:#fff; border:1px solid #e8e8e8; border-bottom:3px solid #cc1818; border-radius:10px; padding:1.6rem 1.2rem; text-align:center; transition:box-shadow 0.25s,transform 0.25s; }
+    .team-card:hover { box-shadow:0 5px 18px rgba(0,0,0,0.07); transform:translateY(-3px); }
+    .team-av { width:72px; height:72px; border-radius:50%; background:#fef0f0; border:2px solid #f0c0c0; margin:0 auto 0.85rem; display:flex; align-items:center; justify-content:center; font-size:2rem; }
+    .team-card h4  { font-size:0.95rem; font-weight:700; color:#1a1a1a; margin-bottom:0.25rem; }
+    .team-role     { font-size:0.8rem; color:#cc1818; font-weight:600; }
+
+    /* ── CONTACT ── */
+    .contact-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin-top:0.8rem; }
+    .con-card { background:#fff; border:1px solid #e8e8e8; border-radius:10px; padding:1.4rem 2rem; text-align:center; cursor:pointer; min-width:170px; transition:box-shadow 0.25s,transform 0.25s,border-color 0.25s; }
+    .con-card:hover { box-shadow:0 5px 18px rgba(0,0,0,0.08); transform:translateY(-3px); border-color:#cc1818; }
+    .con-icon    { font-size:1.9rem; margin-bottom:0.5rem; }
+    .con-card h4 { font-size:0.88rem; font-weight:700; color:#cc1818; }
+    .con-card p  { font-size:0.78rem; color:#888; margin-top:0.22rem; }
+
+    footer { background:#1a1a1a; color:#888; text-align:center; padding:1.6rem; font-size:0.82rem; }
+    footer img { width:42px; height:42px; border-radius:50%; border:2px solid #cc1818; margin:0 auto 0.6rem; display:block; }
+    footer .red  { color:#cc1818; }
+    footer .gold { color:#d4a017; }
+  </style>
+</head>
+<body>
+
+<!-- ══ LOGIN PAGE ══ -->
+<div class="login-page" id="loginPage">
+  <img src="logo.jpeg" class="login-logo" alt="شعار">
+  <div class="login-title">
+    <h1>جمعية جيل التكنولوجيا والروبوتيك</h1>
+    <p>Technology &amp; Robotics Generation Association</p>
+  </div>
+  <div class="login-divider"></div>
+
+  <!-- Google Sign-In button -->
+  <button class="google-btn" id="">
+    <svg viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+    </svg>
+    تسجيل الدخول بـ Google
+  </button>
+
+  <div class="or-divider"><span>أو أدخل بياناتك</span></div>
+
+  <div class="login-field">
+    <label>الاسم الكامل</label>
+    <input type="text" id="uname" placeholder="أدخل اسمك الكامل">
+  </div>
+  <div class="login-field">
+    <label>رقم الهاتف</label>
+    <input type="tel" id="uphone" placeholder="06XXXXXXXX" dir="ltr">
+  </div>
+  <button class="login-btn-submit" id="loginBtn">دخول ←</button>
+  <div class="login-err" id="loginErr">⚠️ الرجاء إدخال الاسم ورقم الهاتف</div>
+  <span class="login-skip" id="skipBtn">تخطي — دخول كضيف</span>
+  <div class="flag-bar">
+    <span style="background:#cc1818"></span>
+    <span style="background:#006233"></span>
+    <span style="background:#d4a017"></span>
+  </div>
+</div>
+
+<!-- ══ ROBOT MODAL ══ -->
+<div class="modal-overlay" id="mOv">
+  <div class="modal">
+    <button class="modal-x" id="mX">✕</button>
+    <div class="modal-hd">
+      <div class="modal-svg-wrap" id="mIcon"></div>
+      <div><h2 id="mTitle"></h2><div class="ms" id="mSub"></div></div>
+    </div>
+    <div class="modal-bd" id="mBd"></div>
+  </div>
+</div>
+
+<!-- ══ LIGHTBOX ══ -->
+<div class="lb-ov" id="lbOv">
+  <button class="lb-close" id="lbClose">✕</button>
+  <div class="lb-head" id="lbHead"></div>
+  <div class="lb-wrap">
+    <button class="lb-btn lb-prev" id="lbPrev">&#8250;</button>
+    <img id="lbImg" src="" alt="">
+    <button class="lb-btn lb-next" id="lbNext">&#8249;</button>
+  </div>
+  <div class="lb-dots" id="lbDots"></div>
+  <div class="lb-info"  id="lbInfo"></div>
+</div>
+
+<!-- ══ SITE ══ -->
+<div id="site" style="display:none">
+  <nav>
+    <div class="nav-brand" id="navHome">
+      <img src="logo.jpeg" class="nav-logo" alt="شعار">
+      <span class="nav-name">جيل التكنولوجيا والروبوتيك</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.8rem;">
+      <ul class="nav-links">
+        <li><button id="btn-robots">الروبوتات</button></li>
+        <li><button id="btn-activities">الأنشطة</button></li>
+        <li><button id="btn-team">الفريق</button></li>
+        <li><button id="btn-contact">تواصل</button></li>
+      </ul>
+      <div class="nav-user" id="navUser">
+        <img id="navAvatar" src="" alt="">
+        <span id="navUserName"></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="hero">
+      <div class="hero-inner">
+        <img src="logo.jpeg" class="hero-logo" alt="شعار">
+        <h1>جمعية جيل التكنولوجيا والروبوتيك</h1>
+        <div class="hero-en">Technology &amp; Robotics Generation Association — TRGA</div>
+        <div class="hero-intro">
+          <p>جمعية جيل التكنولوجيا والروبوتيك فضاء تعليمي يهدف إلى تنمية مهارات الشباب المغربي في البرمجة والإلكترونيات والذكاء الاصطناعي.</p>
+          <p>نسعى إلى بناء جيل قادر على مواكبة التحولات التكنولوجية من خلال مشاريع إبداعية وبطولات روبوتيك محلية ودولية.</p>
+          <p>انضم إلينا وكن جزءاً من مجتمع المبتكرين — تواصل معنا:</p>
+          <div class="hero-phone">📞 +212 613-804531</div>
+        </div>
+        <div class="hero-btns">
+          <button class="btn btn-red"     id="heroRobots">الروبوتات</button>
+          <button class="btn btn-outline" id="heroActivities">الأنشطة</button>
+        </div>
+      </div>
+    </div>
+    <div class="stripe"></div>
+    <footer><img src="logo.jpeg" alt="شعار"><p>© 2024 جمعية <span class="red">جيل التكنولوجيا والروبوتيك</span></p><p style="margin-top:0.35rem">TRGA &nbsp;|&nbsp; <span class="gold" dir="ltr">+212 613-804531</span></p></footer>
+  </div>
+
+  <!-- ROBOTS -->
+  <div class="page" id="page-robots">
+    <div class="page-banner"><h2>🤖 أدواتنا التقنية</h2><p>اضغط على أي روبوت لعرض المواصفات التفصيلية</p></div>
+    <div class="stripe"></div>
+    <div class="section">
+      <div class="robots-grid">
+        <div class="robot-card" data-r="ev3">
+          <span class="click-hint">اضغط لقراءة المزيد</span>
+          <div class="robot-img-wrap">
+            <svg class="robot-svg" viewBox="0 0 120 120">
+              <rect x="20" y="30" width="80" height="60" rx="8" fill="#cc1818" stroke="#e03030" stroke-width="2"/>
+              <rect x="28" y="38" width="64" height="28" rx="4" fill="#2a0a0a"/>
+              <rect x="33" y="43" width="8" height="8" rx="1" fill="#d4a017" opacity=".9"/><rect x="45" y="43" width="8" height="8" rx="1" fill="#d4a017" opacity=".6"/><rect x="57" y="43" width="8" height="8" rx="1" fill="#d4a017" opacity=".9"/><rect x="69" y="43" width="8" height="8" rx="1" fill="#d4a017" opacity=".5"/>
+              <circle cx="40" cy="76" r="7" fill="#006233" stroke="#00a050" stroke-width="1.5"/><circle cx="60" cy="76" r="9" fill="#004d26" stroke="#00a050" stroke-width="2"/><circle cx="80" cy="76" r="7" fill="#006233" stroke="#00a050" stroke-width="1.5"/>
+              <rect x="25" y="92" width="15" height="7" rx="2" fill="#333"/><rect x="50" y="92" width="15" height="7" rx="2" fill="#333"/><rect x="75" y="92" width="15" height="7" rx="2" fill="#333"/>
+              <ellipse cx="25" cy="60" rx="7" ry="19" fill="#222" stroke="#444" stroke-width="1.5"/><ellipse cx="95" cy="60" rx="7" ry="19" fill="#222" stroke="#444" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <h3>LEGO EV3</h3><p>روبوت Mindstorms EV3 مع شاشة وحساسات متعددة ومحركات قابلة للبرمجة</p>
+          <span class="robot-tag">برمجة مرئية</span>
+        </div>
+        <div class="robot-card" data-r="spike">
+          <span class="click-hint">اضغط لقراءة المزيد</span>
+          <div class="robot-img-wrap">
+            <svg class="robot-svg" viewBox="0 0 120 120">
+              <rect x="22" y="25" width="76" height="70" rx="10" fill="#d4a017" stroke="#b8860b" stroke-width="2"/>
+              <circle cx="40" cy="38" r="8" fill="#006233"/><circle cx="60" cy="38" r="8" fill="#cc1818"/><circle cx="80" cy="38" r="8" fill="#006233"/>
+              <rect x="30" y="52" width="60" height="28" rx="6" fill="#1a0f00"/>
+              <circle cx="42" cy="62" r="3" fill="#f0c040" opacity=".9"/><circle cx="53" cy="62" r="3" fill="#f0c040" opacity=".5"/><circle cx="64" cy="62" r="3" fill="#f0c040" opacity=".9"/><circle cx="75" cy="62" r="3" fill="#f0c040" opacity=".4"/>
+              <circle cx="42" cy="72" r="3" fill="#f0c040" opacity=".5"/><circle cx="53" cy="72" r="3" fill="#f0c040" opacity=".9"/><circle cx="64" cy="72" r="3" fill="#f0c040" opacity=".7"/><circle cx="75" cy="72" r="3" fill="#f0c040" opacity=".9"/>
+              <rect x="6" y="40" width="16" height="38" rx="5" fill="#b8860b" stroke="#d4a017" stroke-width="1.5"/><circle cx="14" cy="59" r="8" fill="#966d0a"/>
+              <rect x="98" y="40" width="16" height="38" rx="5" fill="#b8860b" stroke="#d4a017" stroke-width="1.5"/><circle cx="106" cy="59" r="8" fill="#966d0a"/>
+            </svg>
+          </div>
+          <h3>LEGO SPIKE Prime</h3><p>الجيل الجديد من روبوتات LEGO مع مصفوفة LED ودعم Python الكامل</p>
+          <span class="robot-tag">Python / FLL</span>
+        </div>
+        <div class="robot-card" data-r="arduino">
+          <span class="click-hint">اضغط لقراءة المزيد</span>
+          <div class="robot-img-wrap">
+            <svg class="robot-svg" viewBox="0 0 120 120">
+              <rect x="15" y="25" width="90" height="70" rx="4" fill="#006233"/><rect x="18" y="28" width="84" height="64" rx="3" fill="#007a3d"/>
+              <rect x="15" y="38" width="12" height="20" rx="2" fill="#bbb"/><circle cx="20" cy="78" r="8" fill="#111"/><circle cx="20" cy="78" r="4" fill="#222"/>
+              <rect x="45" y="38" width="32" height="22" rx="2" fill="#0d1a00"/>
+              <rect x="28" y="22" width="4" height="8" rx="1" fill="#d4a017" opacity=".8"/><rect x="36" y="22" width="4" height="8" rx="1" fill="#d4a017" opacity=".8"/><rect x="44" y="22" width="4" height="8" rx="1" fill="#d4a017" opacity=".8"/><rect x="52" y="22" width="4" height="8" rx="1" fill="#d4a017" opacity=".8"/><rect x="60" y="22" width="4" height="8" rx="1" fill="#d4a017" opacity=".8"/><rect x="68" y="22" width="4" height="8" rx="1" fill="#d4a017" opacity=".8"/>
+              <circle cx="95" cy="45" r="5" fill="#cc1818"/><circle cx="95" cy="45" r="3" fill="#e03030"/>
+              <ellipse cx="88" cy="70" rx="5" ry="8" fill="#cc1818" stroke="#e03030" stroke-width="1"/><ellipse cx="98" cy="70" rx="5" ry="8" fill="#cc1818" stroke="#e03030" stroke-width="1"/>
+              <rect x="38" y="68" width="12" height="12" rx="2" fill="#d4a017"/><circle cx="44" cy="74" r="4" fill="#b8860b"/>
+            </svg>
+          </div>
+          <h3>Arduino</h3><p>منصة الإلكترونيات مفتوحة المصدر لبناء المشاريع الذكية والتفاعلية</p>
+          <span class="robot-tag">C++ / Hardware</span>
+        </div>
+      </div>
+    </div>
+    <div class="stripe"></div>
+    <footer><img src="logo.jpeg" alt="شعار"><p>© 2024 جمعية <span class="red">جيل التكنولوجيا والروبوتيك</span></p><p style="margin-top:0.35rem">TRGA &nbsp;|&nbsp; <span class="gold" dir="ltr">+212 613-804531</span></p></footer>
+  </div>
+
+  <!-- ACTIVITIES — 6 cards -->
+  <div class="page" id="page-activities">
+    <div class="page-banner"><h2>🏆 أنشطتنا وفعالياتنا</h2><p>اضغط على أي نشاط لمشاهدة الصور</p></div>
+    <div class="stripe"></div>
+    <div class="section">
+      <div class="act-grid">
+
+        <!-- card0 -->
+        <div class="act-card" id="card0">
+          <div class="act-slider"><div class="act-slider-imgs" id="si0"><img src="img1.jpg" alt="نشاط 1"></div>
+          <div class="act-open-bar">📷 اضغط لعرض الصورة بحجم كامل</div></div>
+          <div class="act-info"><h4>بطولة الروبوتيك السنوية</h4><p>مشاركتنا في البطولة الوطنية والحصول على المراكز الأولى</p></div>
+        </div>
+
+        <!-- card1 -->
+        <div class="act-card" id="card1">
+          <div class="act-slider"><div class="act-slider-imgs" id="si1"><img src="img2.jpg" alt="نشاط 2"></div>
+          <div class="act-open-bar">📷 اضغط لعرض الصورة بحجم كامل</div></div>
+          <div class="act-info"><h4>ورشة مبادئ الإلكترونيات</h4><p>تعليم البرمجة والإلكترونيات للمبتدئين</p></div>
+        </div>
+
+        <!-- card2 -->
+        <div class="act-card" id="card2">
+          <div class="act-slider"><div class="act-slider-imgs" id="si2"><img src="img3.jpg" alt="نشاط 3"></div>
+          <div class="act-open-bar">📷 اضغط لعرض الصورة بحجم كامل</div></div>
+          <div class="act-info"><h4>معرض مشاريع الأعضاء</h4><p>عرض أفضل المشاريع الإبداعية للأعضاء</p></div>
+        </div>
+
+        <!-- card3 -->
+        <div class="act-card" id="card3">
+          <div class="act-slider"><div class="act-slider-imgs" id="si3"><img src="img4.jpg" alt="نشاط 4"></div>
+          <div class="act-open-bar">📷 اضغط لعرض الصورة بحجم كامل</div></div>
+          <div class="act-info"><h4>حفل تكريم المتميزين</h4><p>تكريم الأعضاء المتميزين وتوزيع الجوائز</p></div>
+        </div>
+
+        <!-- card4 — جديد -->
+        <div class="act-card" id="card4">
+          <div class="act-slider"><div class="act-slider-imgs" id="si4"><img src="img5.jpg" alt="نشاط 5"></div>
+          <div class="act-open-bar">📷 اضغط لعرض الصورة بحجم كامل</div></div>
+          <div class="act-info"><h4>رحلة تعليمية</h4><p>زيارات ميدانية لمراكز التكنولوجيا والابتكار</p></div>
+        </div>
+
+        <!-- card5 — جديد -->
+        <div class="act-card" id="card5">
+          <div class="act-slider"><div class="act-slider-imgs" id="si5"><img src="img6.jpg" alt="نشاط 6"></div>
+          <div class="act-open-bar">📷 اضغط لعرض الصورة بحجم كامل</div></div>
+          <div class="act-info"><h4>دورة الذكاء الاصطناعي</h4><p>تعريف الأعضاء بأساسيات الذكاء الاصطناعي وتطبيقاته</p></div>
+        </div>
+
+      </div>
+    </div>
+    <div class="stripe"></div>
+    <footer><img src="logo.jpeg" alt="شعار"><p>© 2024 جمعية <span class="red">جيل التكنولوجيا والروبوتيك</span></p><p style="margin-top:0.35rem">TRGA &nbsp;|&nbsp; <span class="gold" dir="ltr">+212 613-804531</span></p></footer>
+  </div>
+
+  <!-- TEAM -->
+  <div class="page" id="page-team">
+    <div class="page-banner"><h2>👥 فريق الجمعية</h2><p>الكوادر المشرفة على تسيير وتطوير الجمعية</p></div>
+    <div class="stripe"></div>
+    <div class="section">
+      <div class="team-grid">
+        <div class="team-card"><div class="team-av">👨‍💼</div><h4>علي حارزون</h4><div class="team-role">رئيس الجمعية</div></div>
+        <div class="team-card"><div class="team-av">👨‍💻</div><h4>أيوب ساليوي</h4><div class="team-role">مدرب البرمجة</div></div>
+        <div class="team-card"><div class="team-av">👨‍🔬</div><h4>عبد الحفيض الطيبي</h4><div class="team-role">منسق الأنشطة</div></div>
+      </div>
+    </div>
+    <div class="stripe"></div>
+    <footer><img src="logo.jpeg" alt="شعار"><p>© 2024 جمعية <span class="red">جيل التكنولوجيا والروبوتيك</span></p><p style="margin-top:0.35rem">TRGA &nbsp;|&nbsp; <span class="gold" dir="ltr">+212 613-804531</span></p></footer>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="page" id="page-contact">
+    <div class="page-banner"><h2>📬 تواصل معنا</h2><p>نحن هنا للإجابة على جميع استفساراتكم</p></div>
+    <div class="stripe"></div>
+    <div class="section">
+      <div class="contact-grid">
+        <div class="con-card" onclick="window.location.href='mailto:aliharrizoun3010@gmail.com'"><div class="con-icon">📧</div><h4>البريد الإلكتروني</h4><p>aliharrizoun3010@gmail.com</p></div>
+        <div class="con-card" onclick="window.location.href='tel:+212613804531'"><div class="con-icon">📞</div><h4>الهاتف</h4><p dir="ltr">+212 613-804531</p></div>
+        <div class="con-card" onclick="window.open('https://www.instagram.com/agtrgourrama?igsh=b2g2NTF2c3ptMHZk','_blank')"><div class="con-icon">📷</div><h4>إنستقرام</h4><p>@agtrgourrama</p></div>
+        <div class="con-card" onclick="window.open('https://maps.app.goo.gl/1YGqTyV2rPExdBaZA?g_st=aw','_blank')"><div class="con-icon">📍</div><h4>الموقع على الخريطة</h4><p>اضغط لفتح الخريطة</p></div>
+      </div>
+    </div>
+    <div class="stripe"></div>
+    <footer><img src="logo.jpeg" alt="شعار"><p>© 2024 جمعية <span class="red">جيل التكنولوجيا والروبوتيك</span></p><p style="margin-top:0.35rem">TRGA &nbsp;|&nbsp; <span class="gold" dir="ltr">+212 613-804531</span></p></footer>
+  </div>
+</div>
+
+<script>
+// ══ GOOGLE SIGN-IN ══
+// ⚠️ ضع هنا Client ID الخاص بك من Google Cloud Console
+var GOOGLE_CLIENT_ID = '624113677743.apps.googleusercontent.com';
+
+window.onload = function() {
+  if (typeof google !== 'undefined' && google.accounts) {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleLogin
+    });
+  }
+};
+
+function handleGoogleLogin(response) {
+  // decode JWT token
+  var payload = JSON.parse(atob(response.credential.split('.')[1]));
+  showSiteWithUser(payload.name, payload.picture);
+}
+
+document.getElementById('googleLoginBtn').addEventListener('click', function() {
+  if (typeof google !== 'undefined' && google.accounts && GOOGLE_CLIENT_ID !== '624113677743.apps.googleusercontent.com') {
+    google.accounts.id.prompt();
+  } else {
+    // fallback: open Google OAuth in popup (بدون Client ID حقيقي)
+    alert('⚠️ لتفعيل تسجيل الدخول بـ Google، يجب إضافة Client ID الخاص بك في الكود.');
+  }
+});
+
+// ══ LOGIN ══
+document.getElementById('loginBtn').addEventListener('click', function() {
+  var name  = document.getElementById('uname').value.trim();
+  var phone = document.getElementById('uphone').value.trim();
+  var err   = document.getElementById('loginErr');
+  if (!name || !phone) { err.style.display='block'; return; }
+  err.style.display = 'none';
+  showSiteWithUser(name, null);
+});
+document.getElementById('skipBtn').addEventListener('click', function(){ showSiteWithUser('ضيف', null); });
+['uname','uphone'].forEach(function(id){
+  document.getElementById(id).addEventListener('keydown', function(e){
+    if (e.key==='Enter') document.getElementById('loginBtn').click();
+  });
+});
+
+function showSiteWithUser(name, avatar) {
+  // show user in navbar
+  if (name && name !== 'ضيف') {
+    var nu = document.getElementById('navUser');
+    nu.style.display = 'flex';
+    document.getElementById('navUserName').textContent = name;
+    if (avatar) {
+      document.getElementById('navAvatar').src = avatar;
+      document.getElementById('navAvatar').style.display = 'block';
+    } else {
+      document.getElementById('navAvatar').style.display = 'none';
+    }
+  }
+  var lp = document.getElementById('loginPage');
+  lp.style.transition = 'opacity 0.4s';
+  lp.style.opacity = '0';
+  setTimeout(function(){
+    lp.style.display = 'none';
+    document.getElementById('site').style.display = 'block';
+    initNav(); initRobots(); initModal(); initLightbox(); initCards();
+  }, 400);
+}
+
+function showSite() { showSiteWithUser('ضيف', null); }
+
+// ══ NAV ══
+function initNav() {
+  document.getElementById('navHome').addEventListener('click',        function(){ goTo('home'); });
+  document.getElementById('btn-robots').addEventListener('click',     function(){ goTo('robots'); });
+  document.getElementById('btn-activities').addEventListener('click', function(){ goTo('activities'); });
+  document.getElementById('btn-team').addEventListener('click',       function(){ goTo('team'); });
+  document.getElementById('btn-contact').addEventListener('click',    function(){ goTo('contact'); });
+  document.getElementById('heroRobots').addEventListener('click',     function(){ goTo('robots'); });
+  document.getElementById('heroActivities').addEventListener('click', function(){ goTo('activities'); });
+}
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-links button').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.getElementById('btn-'+page);
+  if (btn) btn.classList.add('active');
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ══ CARDS → LIGHTBOX ══
+var cardImages = {
+  card0:{ title:'بطولة الروبوتيك السنوية',  imgs:['img1.jpg'] },
+  card1:{ title:'ورشة مبادئ الإلكترونيات', imgs:['img2.jpg'] },
+  card2:{ title:'معرض مشاريع الأعضاء',      imgs:['img3.jpg'] },
+  card3:{ title:'حفل تكريم المتميزين',       imgs:['img4.jpg'] },
+  card4:{ title:'رحلة تعليمية',              imgs:['img5.jpg'] },
+  card5:{ title:'دورة الذكاء الاصطناعي',    imgs:['img6.jpg'] }
+};
+function initCards() {
+  ['card0','card1','card2','card3','card4','card5'].forEach(function(cid){
+    document.getElementById(cid).addEventListener('click', function(){
+      var d = cardImages[cid];
+      openLB(d.title, d.imgs);
+    });
+  });
+}
+
+// ══ LIGHTBOX ══
+var lbList=[], lbIdx=0;
+function openLB(title, imgs) {
+  lbList=imgs; lbIdx=0;
+  document.getElementById('lbHead').textContent=title;
+  lbShow(0); buildLbDots();
+  document.getElementById('lbOv').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function lbShow(i) {
+  lbIdx=(i+lbList.length)%lbList.length;
+  document.getElementById('lbImg').src=lbList[lbIdx];
+  document.getElementById('lbInfo').textContent=(lbIdx+1)+' / '+lbList.length;
+  document.querySelectorAll('.lb-dot').forEach(function(d,j){ d.classList.toggle('on',j===lbIdx); });
+  var show=lbList.length>1;
+  document.getElementById('lbPrev').style.display=show?'flex':'none';
+  document.getElementById('lbNext').style.display=show?'flex':'none';
+}
+function buildLbDots() {
+  var el=document.getElementById('lbDots'); el.innerHTML='';
+  lbList.forEach(function(_,i){ var d=document.createElement('button'); d.className='lb-dot'+(i===0?' on':''); d.onclick=function(){ lbShow(i); }; el.appendChild(d); });
+}
+function closeLB() { document.getElementById('lbOv').classList.remove('open'); document.body.style.overflow=''; }
+function initLightbox() {
+  document.getElementById('lbClose').addEventListener('click', closeLB);
+  document.getElementById('lbPrev').addEventListener('click',  function(e){ e.stopPropagation(); lbShow(lbIdx-1); });
+  document.getElementById('lbNext').addEventListener('click',  function(e){ e.stopPropagation(); lbShow(lbIdx+1); });
+  document.getElementById('lbOv').addEventListener('click',    function(e){ if(e.target===this) closeLB(); });
+  document.addEventListener('keydown', function(e){
+    if (!document.getElementById('lbOv').classList.contains('open')) return;
+    if (e.key==='ArrowLeft')  lbShow(lbIdx-1);
+    if (e.key==='ArrowRight') lbShow(lbIdx+1);
+    if (e.key==='Escape')     closeLB();
+  });
+}
+
+// ══ ROBOTS ══
+var svgs={};
+function initRobots() {
+  document.querySelectorAll('.robot-card').forEach(function(c){
+    svgs[c.dataset.r]=c.querySelector('.robot-svg').outerHTML;
+    c.addEventListener('click',function(){ openM(c.dataset.r); });
+  });
+}
+function initModal() {
+  document.getElementById('mX').addEventListener('click', closeM);
+  document.getElementById('mOv').addEventListener('click', function(e){ if(e.target===this) closeM(); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape'&&!document.getElementById('lbOv').classList.contains('open')) closeM(); });
+}
+var RD={
+  ev3:{title:'LEGO Mindstorms EV3',sub:'روبوت تعليمي متكامل — الجيل الثالث',
+    intro:'LEGO Mindstorms EV3 روبوت تعليمي احترافي طورته LEGO مع معهد MIT. يُعدّ من أشهر منصات الروبوتيك التعليمية في العالم.',
+    specs:[{l:'المعالج',v:'ARM9 — 300 MHz'},{l:'الذاكرة',v:'64MB RAM'},{l:'الشاشة',v:'LCD 178×128'},{l:'الموتور',v:'4 مخرجات'},{l:'الحساسات',v:'4 مداخل'},{l:'الاتصال',v:'Bluetooth / USB'},{l:'الطاقة',v:'6 بطاريات AA'},{l:'البرمجة',v:'Python / EV3-G'}],
+    uses:['بطولات FLL','WRO روبوتيك','مشاريع مدرسية','الخوارزميات']},
+  spike:{title:'LEGO SPIKE Prime',sub:'الجيل الجديد لبطولات FIRST LEGO League',
+    intro:'LEGO SPIKE Prime الخلف الرسمي لـ EV3 في بطولات FLL. يتميز بمصفوفة LED 5×5 ملونة ودعم Python الكامل.',
+    specs:[{l:'المعالج',v:'ARM Cortex-M4'},{l:'الشاشة',v:'LED 5×5'},{l:'المنافذ',v:'6 هايبريد'},{l:'الاتصال',v:'Bluetooth 4.2'},{l:'الطاقة',v:'بطارية شحن'},{l:'البرمجة',v:'MicroPython'},{l:'التوافق',v:'LEGO Technic'},{l:'البطولة',v:'FLL'}],
+    uses:['FIRST LEGO League','ورش Python','مشاريع الابتكار']},
+  arduino:{title:'Arduino UNO',sub:'منصة الإلكترونيات مفتوحة المصدر',
+    intro:'Arduino منصة مفتوحة المصدر أُطلقت 2005. في جمعيتنا يُستخدم لتعليم الإلكترونيات وبناء مشاريع متقدمة.',
+    specs:[{l:'المعالج',v:'ATmega328P'},{l:'الذاكرة',v:'32KB Flash'},{l:'الجهد',v:'5V'},{l:'رقمية',v:'14 دبوس'},{l:'تشابهية',v:'6 مداخل'},{l:'التوصيل',v:'USB Type-B'},{l:'البرمجة',v:'C++ / Arduino IDE'},{l:'التوافق',v:'آلاف المكتبات'}],
+    uses:['مشاريع IoT','طاقة شمسية','روبوتات مخصصة','مستشعرات']}
+};
+function openM(k) {
+  var d=RD[k];
+  document.getElementById('mTitle').textContent=d.title;
+  document.getElementById('mSub').textContent=d.sub;
+  document.getElementById('mIcon').innerHTML=svgs[k];
+  var sh=d.specs.map(function(s){ return '<div class="spec-item"><div class="spec-lbl">'+s.l+'</div><div class="spec-val">'+s.v+'</div></div>'; }).join('');
+  var th=d.uses.map(function(u){ return '<span class="use-tag">'+u+'</span>'; }).join('');
+  document.getElementById('mBd').innerHTML='<div class="modal-intro">'+d.intro+'</div><div class="spec-head">المواصفات التقنية</div><div class="specs-grid">'+sh+'</div><div class="spec-head">استخداماتنا في الجمعية</div><div class="use-tags">'+th+'</div>';
+  document.getElementById('mOv').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeM() { document.getElementById('mOv').classList.remove('open'); document.body.style.overflow=''; }
+</script>
+</body>
+</html>

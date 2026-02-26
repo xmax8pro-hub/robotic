@@ -533,7 +533,7 @@ footer .hi2{background:var(--gGold);-webkit-background-clip:text;-webkit-text-fi
 var GOOGLE_CLIENT_ID = '624113677743-sfjfek0md63j7leu77og9hihg4315m5q.apps.googleusercontent.com';
 
 window.onload = function() {
-  if (typeof google !== 'undefined' && google.accounts) {
+if (typeof google !== 'undefined' && GOOGLE_CLIENT_ID !== '624113677743-sfjfek0md63j7leu77og9hihg4315m5q.apps.googleusercontent.com') {
     google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: handleGoogleLogin
@@ -662,4 +662,5 @@ function closeM(){document.getElementById('mOv').classList.remove('open');docume
 </script>
 </body>
 </html>
+
 

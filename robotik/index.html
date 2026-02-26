@@ -528,15 +528,32 @@ footer .hi2{background:var(--gGold);-webkit-background-clip:text;-webkit-text-fi
 </div>
 
 <script>
-// GOOGLE
-var GOOGLE_CLIENT_ID='624113677743-sfjfek0md63j7leu77og9hihg4315m5q.apps.googleusercontent.com';
-window.onload=function(){if(typeof google!=='undefined'&&google.accounts)google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleLogin})};
-function handleGoogleLogin(r){var p=JSON.parse(atob(r.credential.split('.')[1]));showSiteWithUser(p.name,p.picture)}
-document.getElementById('googleLoginBtn').addEventListener('click',function(){
-  if(typeof google!=='undefined'&&GOOGLE_CLIENT_ID!=='624113677743-sfjfek0md63j7leu77og9hihg4315m5q.apps.googleusercontent.com')google.accounts.id.prompt();
-  else alert('⚠️ أضف Client ID الخاص بك لتفعيل Google Login');
-});
 
+// GOOGLE
+var GOOGLE_CLIENT_ID = '624113677743-sfjfek0md63j7leu77og9hihg4315m5q.apps.googleusercontent.com';
+
+window.onload = function() {
+  if (typeof google !== 'undefined' && google.accounts) {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleLogin
+    });
+  }
+};
+
+function handleGoogleLogin(r) {
+  var p = JSON.parse(atob(r.credential.split('.')[1]));
+  showSiteWithUser(p.name, p.picture);
+}
+
+document.getElementById('googleLoginBtn').addEventListener('click', function() {
+  // تم حذف شرط التحقق القديم الذي كان يسبب المشكلة
+  if (typeof google !== 'undefined') {
+    google.accounts.id.prompt(); 
+  } else {
+    alert('⚠️ لم يتم تحميل مكتبة قوقل بشكل صحيح، تأكد من اتصال الإنترنت');
+  }
+});
 // LOGIN
 document.getElementById('loginBtn').addEventListener('click',function(){
   var n=document.getElementById('uname').value.trim(),p=document.getElementById('uphone').value.trim(),e=document.getElementById('loginErr');
@@ -645,3 +662,4 @@ function closeM(){document.getElementById('mOv').classList.remove('open');docume
 </script>
 </body>
 </html>
+

@@ -516,7 +516,7 @@ footer .hi2{background:var(--gGold);-webkit-background-clip:text;-webkit-text-fi
     <div class="stripe"></div>
     <div class="section">
       <div class="contact-grid">
-        <div class="con-card" onclick="window.location.href='mailto:aliharrizoun3010@gmail.com'"><span class="con-icon">📧</span><h4>البريد الإلكتروني</h4><p>aliharrizoun3010@gmail.com</p></div>
+        <div class="con-card" onclick="window.location.href='mailto:aliharrizoun3010@gmail.com'"><span class="con-icon">📧</span><h4>البريد الإلكتروني</h4><p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d9b8b5b0b1b8ababb0a3b6acb7eae9e8e999beb4b8b0b5f7bab6b4">[email&#160;protected]</a></p></div>
         <div class="con-card" onclick="window.location.href='tel:+212613804531'"><span class="con-icon">📞</span><h4>الهاتف</h4><p dir="ltr">+212 613-804531</p></div>
         <div class="con-card" onclick="window.open('https://www.instagram.com/agtrgourrama?igsh=b2g2NTF2c3ptMHZk','_blank')"><span class="con-icon">📷</span><h4>إنستقرام</h4><p>@agtrgourrama</p></div>
         <div class="con-card" onclick="window.open('https://maps.app.goo.gl/1YGqTyV2rPExdBaZA?g_st=aw','_blank')"><span class="con-icon">📍</span><h4>الموقع على الخريطة</h4><p>اضغط لفتح الخريطة</p></div>
@@ -528,139 +528,300 @@ footer .hi2{background:var(--gGold);-webkit-background-clip:text;-webkit-text-fi
 </div>
 
 <script>
-
-// GOOGLE
+// ============================================================
+// 🔑 ضع هنا Google Client ID الخاص بك من Google Cloud Console
+//    https://console.cloud.google.com/apis/credentials
+// ============================================================
 var GOOGLE_CLIENT_ID = '624113677743-sfjfek0md63j7leu77og9hihg4315m5q.apps.googleusercontent.com';
 
-window.onload = function() {
-if (typeof google !== 'undefined' && GOOGLE_CLIENT_ID !== '624113677743-sfjfek0md63j7leu77og9hihg4315m5q.apps.googleusercontent.com') {
-    google.accounts.id.initialize({
+var googleTokenClient = null;
+
+// ====== مساعدة: إظهار رسالة خطأ ======
+function showErr(msg) {
+  var e = document.getElementById('loginErr');
+  e.textContent = msg ? '⚠️ ' + msg : '⚠️ الرجاء إدخال الاسم ورقم الهاتف';
+  e.style.display = 'block';
+}
+function hideErr() {
+  document.getElementById('loginErr').style.display = 'none';
+}
+
+// ====== تهيئة Google ======
+window.addEventListener('load', function () {
+  try {
+    if (
+      typeof google === 'undefined' ||
+      !google.accounts ||
+      !google.accounts.oauth2 ||
+      GOOGLE_CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com'
+    ) return;
+
+    googleTokenClient = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleLogin
+      scope: 'openid profile email',
+      callback: handleGoogleToken
+    });
+  } catch (err) {
+    console.warn('Google init error:', err);
+  }
+});
+
+function handleGoogleToken(response) {
+  if (response.error) {
+    showErr('فشل تسجيل الدخول بـ Google: ' + response.error);
+    return;
+  }
+  fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { Authorization: 'Bearer ' + response.access_token }
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (user) { enterSite(user.name, user.picture); })
+    .catch(function () { showErr('تعذّر جلب بيانات حسابك من Google'); });
+}
+
+// ====== زر Google ======
+document.getElementById('googleLoginBtn').addEventListener('click', function () {
+  hideErr();
+
+  if (GOOGLE_CLIENT_ID === '295699802302-t4l7rov5vo93g20fuphhbh4sj21dbgu1.apps.googleusercontent.com') {
+    showErr('يرجى إضافة Google Client ID في الكود أولاً');
+    return;
+  }
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+    showErr('لم يتم تحميل مكتبة Google — تحقق من اتصال الإنترنت');
+    return;
+  }
+  if (!googleTokenClient) {
+    googleTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'openid profile email',
+      callback: handleGoogleToken
     });
   }
-};
-
-function handleGoogleLogin(r) {
-  var p = JSON.parse(atob(r.credential.split('.')[1]));
-  showSiteWithUser(p.name, p.picture);
-}
-
-document.getElementById('googleLoginBtn').addEventListener('click', function() {
-  // تم حذف شرط التحقق القديم الذي كان يسبب المشكلة
-  if (typeof google !== 'undefined') {
-    google.accounts.id.prompt(); 
-  } else {
-    alert('⚠️ لم يتم تحميل مكتبة قوقل بشكل صحيح، تأكد من اتصال الإنترنت');
-  }
+  googleTokenClient.requestAccessToken({ prompt: 'select_account' });
 });
-// LOGIN
-document.getElementById('loginBtn').addEventListener('click',function(){
-  var n=document.getElementById('uname').value.trim(),p=document.getElementById('uphone').value.trim(),e=document.getElementById('loginErr');
-  if(!n||!p){e.style.display='block';return}e.style.display='none';showSiteWithUser(n,null);
-});
-document.getElementById('skipBtn').addEventListener('click',function(){showSiteWithUser('ضيف',null)});
-['uname','uphone'].forEach(function(id){document.getElementById(id).addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('loginBtn').click()})});
 
-function showSiteWithUser(name,avatar){
-  if(name&&name!=='ضيف'){
-    var nu=document.getElementById('navUser');nu.style.display='flex';
-    document.getElementById('navUserName').textContent=name;
-    if(avatar){document.getElementById('navAvatar').src=avatar;document.getElementById('navAvatar').style.display='block'}
-    else document.getElementById('navAvatar').style.display='none';
+// ====== زر الدخول بالبيانات ======
+document.getElementById('loginBtn').addEventListener('click', function () {
+  var name  = document.getElementById('uname').value.trim();
+  var phone = document.getElementById('uphone').value.trim();
+  if (!name || !phone) {
+    showErr('الرجاء إدخال الاسم ورقم الهاتف');
+    return;
   }
-  var lp=document.getElementById('loginPage');lp.style.transition='opacity 0.5s';lp.style.opacity='0';
-  setTimeout(function(){lp.style.display='none';document.getElementById('site').style.display='block';initNav();initRobots();initModal();initLightbox();initCards()},500);
+  hideErr();
+  enterSite(name, null);
+});
+
+// ====== زر تخطي ======
+document.getElementById('skipBtn').addEventListener('click', function () {
+  enterSite('ضيف', null);
+});
+
+// ====== Enter key ======
+['uname', 'uphone'].forEach(function (id) {
+  document.getElementById(id).addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('loginBtn').click();
+  });
+});
+
+// ====== الدخول للموقع ======
+function enterSite(name, avatar) {
+  // إظهار معلومات المستخدم في الشريط
+  if (name && name !== 'ضيف') {
+    var navUser = document.getElementById('navUser');
+    if (navUser) navUser.style.display = 'flex';
+    var navName = document.getElementById('navUserName');
+    if (navName) navName.textContent = name;
+    var navAv   = document.getElementById('navAvatar');
+    if (navAv) {
+      if (avatar) { navAv.src = avatar; navAv.style.display = 'block'; }
+      else navAv.style.display = 'none';
+    }
+  }
+  // إخفاء صفحة الدخول وإظهار الموقع
+  var lp = document.getElementById('loginPage');
+  lp.style.transition = 'opacity 0.5s';
+  lp.style.opacity    = '0';
+  setTimeout(function () {
+    lp.style.display = 'none';
+    var site = document.getElementById('site');
+    site.style.display = 'block';
+    initNav();
+    initRobots();
+    initModal();
+    initLightbox();
+    initCards();
+    goTo('home');
+  }, 500);
 }
 
-// NAV
-function initNav(){
-  document.getElementById('navHome').addEventListener('click',function(){goTo('home')});
-  document.getElementById('btn-robots').addEventListener('click',function(){goTo('robots')});
-  document.getElementById('btn-activities').addEventListener('click',function(){goTo('activities')});
-  document.getElementById('btn-team').addEventListener('click',function(){goTo('team')});
-  document.getElementById('btn-contact').addEventListener('click',function(){goTo('contact')});
-  document.getElementById('heroRobots').addEventListener('click',function(){goTo('robots')});
-  document.getElementById('heroActivities').addEventListener('click',function(){goTo('activities')});
-}
-function goTo(p){
-  document.querySelectorAll('.page').forEach(function(x){x.classList.remove('active')});
-  document.getElementById('page-'+p).classList.add('active');
-  document.querySelectorAll('.nav-links button').forEach(function(b){b.classList.remove('active')});
-  var b=document.getElementById('btn-'+p);if(b)b.classList.add('active');
-  window.scrollTo({top:0,behavior:'smooth'});
+// ====== التنقل ======
+function initNav() {
+  function bindNav(id, page) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', function () { goTo(page); });
+  }
+  bindNav('navHome',        'home');
+  bindNav('btn-robots',     'robots');
+  bindNav('btn-activities', 'activities');
+  bindNav('btn-team',       'team');
+  bindNav('btn-contact',    'contact');
+  bindNav('heroRobots',     'robots');
+  bindNav('heroActivities', 'activities');
 }
 
-// CARDS
-var cardImages={
-  card0:{title:'بطولة الروبوتيك السنوية',imgs:['img1.jpg']},
-  card1:{title:'ورشة مبادئ الإلكترونيات',imgs:['img2.jpg']},
-  card2:{title:'معرض مشاريع الأعضاء',imgs:['img3.jpg']},
-  card3:{title:'حفل تكريم المتميزين',imgs:['img4.jpg']},
-  card4:{title:'رحلة تعليمية',imgs:['img5.jpg']},
-  card5:{title:'دورة الذكاء الاصطناعي',imgs:['img6.jpg']}
+function goTo(p) {
+  document.querySelectorAll('.page').forEach(function (x) { x.classList.remove('active'); });
+  var pg = document.getElementById('page-' + p);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.nav-links button').forEach(function (b) { b.classList.remove('active'); });
+  var btn = document.getElementById('btn-' + p);
+  if (btn) btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ====== كروت الأنشطة ======
+var cardImages = {
+  card0: { title: 'بطولة الروبوتيك السنوية',   imgs: ['img1.jpg'] },
+  card1: { title: 'ورشة مبادئ الإلكترونيات',   imgs: ['img2.jpg'] },
+  card2: { title: 'معرض مشاريع الأعضاء',        imgs: ['img3.jpg'] },
+  card3: { title: 'حفل تكريم المتميزين',        imgs: ['img4.jpg'] },
+  card4: { title: 'رحلة تعليمية',               imgs: ['img5.jpg'] },
+  card5: { title: 'دورة الذكاء الاصطناعي',      imgs: ['img6.jpg'] }
 };
-function initCards(){
-  ['card0','card1','card2','card3','card4','card5'].forEach(function(cid){
-    document.getElementById(cid).addEventListener('click',function(){var d=cardImages[cid];openLB(d.title,d.imgs)});
+function initCards() {
+  Object.keys(cardImages).forEach(function (cid) {
+    var el = document.getElementById(cid);
+    if (el) el.addEventListener('click', function () {
+      var d = cardImages[cid];
+      openLB(d.title, d.imgs);
+    });
   });
 }
 
-// LIGHTBOX
-var lbList=[],lbIdx=0;
-function openLB(title,imgs){lbList=imgs;lbIdx=0;document.getElementById('lbHead').textContent=title;lbShow(0);buildLbDots();document.getElementById('lbOv').classList.add('open');document.body.style.overflow='hidden'}
-function lbShow(i){lbIdx=(i+lbList.length)%lbList.length;document.getElementById('lbImg').src=lbList[lbIdx];document.getElementById('lbInfo').textContent=(lbIdx+1)+' / '+lbList.length;document.querySelectorAll('.lb-dot').forEach(function(d,j){d.classList.toggle('on',j===lbIdx)});var s=lbList.length>1;document.getElementById('lbPrev').style.display=s?'flex':'none';document.getElementById('lbNext').style.display=s?'flex':'none'}
-function buildLbDots(){var el=document.getElementById('lbDots');el.innerHTML='';lbList.forEach(function(_,i){var d=document.createElement('button');d.className='lb-dot'+(i===0?' on':'');d.onclick=function(){lbShow(i)};el.appendChild(d)})}
-function closeLB(){document.getElementById('lbOv').classList.remove('open');document.body.style.overflow=''}
-function initLightbox(){
-  document.getElementById('lbClose').addEventListener('click',closeLB);
-  document.getElementById('lbPrev').addEventListener('click',function(e){e.stopPropagation();lbShow(lbIdx-1)});
-  document.getElementById('lbNext').addEventListener('click',function(e){e.stopPropagation();lbShow(lbIdx+1)});
-  document.getElementById('lbOv').addEventListener('click',function(e){if(e.target===this)closeLB()});
-  document.addEventListener('keydown',function(e){
-    if(!document.getElementById('lbOv').classList.contains('open'))return;
-    if(e.key==='ArrowLeft')lbShow(lbIdx-1);
-    if(e.key==='ArrowRight')lbShow(lbIdx+1);
-    if(e.key==='Escape')closeLB();
+// ====== Lightbox ======
+var lbList = [], lbIdx = 0;
+function openLB(title, imgs) {
+  lbList = imgs; lbIdx = 0;
+  document.getElementById('lbHead').textContent = title;
+  lbShow(0);
+  buildLbDots();
+  document.getElementById('lbOv').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function lbShow(i) {
+  lbIdx = (i + lbList.length) % lbList.length;
+  document.getElementById('lbImg').src = lbList[lbIdx];
+  document.getElementById('lbInfo').textContent = (lbIdx + 1) + ' / ' + lbList.length;
+  document.querySelectorAll('.lb-dot').forEach(function (d, j) { d.classList.toggle('on', j === lbIdx); });
+  var multi = lbList.length > 1;
+  document.getElementById('lbPrev').style.display = multi ? 'flex' : 'none';
+  document.getElementById('lbNext').style.display = multi ? 'flex' : 'none';
+}
+function buildLbDots() {
+  var el = document.getElementById('lbDots'); el.innerHTML = '';
+  lbList.forEach(function (_, i) {
+    var d = document.createElement('button');
+    d.className = 'lb-dot' + (i === 0 ? ' on' : '');
+    d.onclick = function () { lbShow(i); };
+    el.appendChild(d);
+  });
+}
+function closeLB() {
+  document.getElementById('lbOv').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function initLightbox() {
+  document.getElementById('lbClose').addEventListener('click', closeLB);
+  document.getElementById('lbPrev').addEventListener('click', function (e) { e.stopPropagation(); lbShow(lbIdx - 1); });
+  document.getElementById('lbNext').addEventListener('click', function (e) { e.stopPropagation(); lbShow(lbIdx + 1); });
+  document.getElementById('lbOv').addEventListener('click',  function (e) { if (e.target === this) closeLB(); });
+  document.addEventListener('keydown', function (e) {
+    if (!document.getElementById('lbOv').classList.contains('open')) return;
+    if (e.key === 'ArrowLeft')  lbShow(lbIdx - 1);
+    if (e.key === 'ArrowRight') lbShow(lbIdx + 1);
+    if (e.key === 'Escape')     closeLB();
   });
 }
 
-// ROBOTS
-var svgs={};
-function initRobots(){document.querySelectorAll('.robot-card').forEach(function(c){svgs[c.dataset.r]=c.querySelector('.robot-svg').outerHTML;c.addEventListener('click',function(){openM(c.dataset.r)})})}
-function initModal(){
-  document.getElementById('mX').addEventListener('click',closeM);
-  document.getElementById('mOv').addEventListener('click',function(e){if(e.target===this)closeM()});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!document.getElementById('lbOv').classList.contains('open'))closeM()});
+// ====== الروبوتات والنافذة المنبثقة ======
+var svgs = {};
+function initRobots() {
+  document.querySelectorAll('.robot-card').forEach(function (c) {
+    var svgEl = c.querySelector('.robot-svg');
+    if (svgEl) svgs[c.dataset.r] = svgEl.outerHTML;
+    c.addEventListener('click', function () { openM(c.dataset.r); });
+  });
 }
-var RD={
-  ev3:{title:'LEGO Mindstorms EV3',sub:'روبوت تعليمي متكامل — الجيل الثالث',
-    intro:'LEGO Mindstorms EV3 روبوت تعليمي احترافي طورته LEGO مع معهد MIT. يُعدّ من أشهر منصات الروبوتيك التعليمية في العالم.',
-    specs:[{l:'المعالج',v:'ARM9 — 300 MHz'},{l:'الذاكرة',v:'64MB RAM'},{l:'الشاشة',v:'LCD 178×128'},{l:'الموتور',v:'4 مخرجات'},{l:'الحساسات',v:'4 مداخل'},{l:'الاتصال',v:'Bluetooth / USB'},{l:'الطاقة',v:'6 بطاريات AA'},{l:'البرمجة',v:'Python / EV3-G'}],
-    uses:['بطولات FLL','WRO روبوتيك','مشاريع مدرسية','الخوارزميات']},
-  spike:{title:'LEGO SPIKE Prime',sub:'الجيل الجديد لبطولات FIRST LEGO League',
-    intro:'LEGO SPIKE Prime الخلف الرسمي لـ EV3 في بطولات FLL. يتميز بمصفوفة LED 5×5 ملونة ودعم Python الكامل.',
-    specs:[{l:'المعالج',v:'ARM Cortex-M4'},{l:'الشاشة',v:'LED 5×5'},{l:'المنافذ',v:'6 هايبريد'},{l:'الاتصال',v:'Bluetooth 4.2'},{l:'الطاقة',v:'بطارية شحن'},{l:'البرمجة',v:'MicroPython'},{l:'التوافق',v:'LEGO Technic'},{l:'البطولة',v:'FLL'}],
-    uses:['FIRST LEGO League','ورش Python','مشاريع الابتكار']},
-  arduino:{title:'Arduino UNO',sub:'منصة الإلكترونيات مفتوحة المصدر',
-    intro:'Arduino منصة مفتوحة المصدر أُطلقت 2005. في جمعيتنا يُستخدم لتعليم الإلكترونيات وبناء مشاريع متقدمة.',
-    specs:[{l:'المعالج',v:'ATmega328P'},{l:'الذاكرة',v:'32KB Flash'},{l:'الجهد',v:'5V'},{l:'رقمية',v:'14 دبوس'},{l:'تشابهية',v:'6 مداخل'},{l:'التوصيل',v:'USB Type-B'},{l:'البرمجة',v:'C++ / Arduino IDE'},{l:'التوافق',v:'آلاف المكتبات'}],
-    uses:['مشاريع IoT','طاقة شمسية','روبوتات مخصصة','مستشعرات']}
+function initModal() {
+  var mX  = document.getElementById('mX');
+  var mOv = document.getElementById('mOv');
+  if (mX)  mX.addEventListener('click', closeM);
+  if (mOv) mOv.addEventListener('click', function (e) { if (e.target === this) closeM(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !document.getElementById('lbOv').classList.contains('open')) closeM();
+  });
+}
+function closeM() {
+  var mOv = document.getElementById('mOv');
+  if (mOv) mOv.classList.remove('open');
+}
+var RD = {
+  ev3: {
+    title: 'LEGO Mindstorms EV3', sub: 'روبوت تعليمي متكامل — الجيل الثالث',
+    intro: 'LEGO Mindstorms EV3 روبوت تعليمي احترافي طورته LEGO مع معهد MIT. يُعدّ من أشهر منصات الروبوتيك التعليمية في العالم.',
+    specs: [
+      {l:'المعالج',v:'ARM9 — 300 MHz'},{l:'الذاكرة',v:'64MB RAM'},
+      {l:'الشاشة',v:'LCD 178×128'},{l:'الموتور',v:'4 مخرجات'},
+      {l:'الحساسات',v:'4 مداخل'},{l:'الاتصال',v:'Bluetooth / USB'},
+      {l:'الطاقة',v:'6 بطاريات AA'},{l:'البرمجة',v:'Python / EV3-G'}
+    ],
+    uses: ['بطولات FLL','WRO روبوتيك','مشاريع مدرسية','الخوارزميات']
+  },
+  spike: {
+    title: 'LEGO SPIKE Prime', sub: 'الجيل الجديد لبطولات FIRST LEGO League',
+    intro: 'LEGO SPIKE Prime الخلف الرسمي لـ EV3 في بطولات FLL. يتميز بمصفوفة LED 5×5 ملونة ودعم Python الكامل.',
+    specs: [
+      {l:'المعالج',v:'ARM Cortex-M4'},{l:'الشاشة',v:'LED 5×5'},
+      {l:'المنافذ',v:'6 هايبريد'},{l:'الاتصال',v:'Bluetooth 4.2'},
+      {l:'الطاقة',v:'بطارية شحن'},{l:'البرمجة',v:'MicroPython'},
+      {l:'التوافق',v:'LEGO Technic'},{l:'البطولة',v:'FLL'}
+    ],
+    uses: ['FIRST LEGO League','ورش Python','مشاريع الابتكار']
+  },
+  arduino: {
+    title: 'Arduino UNO', sub: 'منصة الإلكترونيات مفتوحة المصدر',
+    intro: 'Arduino منصة مفتوحة المصدر أُطلقت 2005. في جمعيتنا يُستخدم لتعليم الإلكترونيات وبناء مشاريع متقدمة.',
+    specs: [
+      {l:'المعالج',v:'ATmega328P'},{l:'الذاكرة',v:'32KB Flash'},
+      {l:'الجهد',v:'5V'},{l:'رقمية',v:'14 دبوس'},
+      {l:'تشابهية',v:'6 مداخل'},{l:'التوصيل',v:'USB Type-B'},
+      {l:'البرمجة',v:'C++ / Arduino IDE'},{l:'التوافق',v:'آلاف المكتبات'}
+    ],
+    uses: ['مشاريع IoT','طاقة شمسية','روبوتات مخصصة','مستشعرات']
+  }
 };
-function openM(k){
-  var d=RD[k];
-  document.getElementById('mTitle').textContent=d.title;
-  document.getElementById('mSub').textContent=d.sub;
-  document.getElementById('mIcon').innerHTML=svgs[k];
-  var sh=d.specs.map(function(s){return'<div class="spec-item"><div class="spec-lbl">'+s.l+'</div><div class="spec-val">'+s.v+'</div></div>'}).join('');
-  var th=d.uses.map(function(u){return'<span class="use-tag">'+u+'</span>'}).join('');
-  document.getElementById('mBd').innerHTML='<div class="modal-intro">'+d.intro+'</div><div class="spec-head">المواصفات التقنية</div><div class="specs-grid">'+sh+'</div><div class="spec-head">استخداماتنا في الجمعية</div><div class="use-tags">'+th+'</div>';
+function openM(k) {
+  var d = RD[k];
+  if (!d) return;
+  document.getElementById('mTitle').textContent = d.title;
+  document.getElementById('mSub').textContent   = d.sub;
+  document.getElementById('mIcon').innerHTML    = svgs[k] || '';
+  var sh = d.specs.map(function (s) {
+    return '<div class="spec-item"><div class="spec-lbl">' + s.l + '</div><div class="spec-val">' + s.v + '</div></div>';
+  }).join('');
+  var th = d.uses.map(function (u) {
+    return '<span class="use-tag">' + u + '</span>';
+  }).join('');
+  document.getElementById('mBd').innerHTML =
+    '<div class="modal-intro">' + d.intro + '</div>' +
+    '<div class="spec-head">المواصفات التقنية</div>' +
+    '<div class="specs-grid">' + sh + '</div>' +
+    '<div class="spec-head">استخداماتنا في الجمعية</div>' +
+    '<div class="use-tags">' + th + '</div>';
   document.getElementById('mOv').classList.add('open');
-  document.body.style.overflow='hidden';
 }
-function closeM(){document.getElementById('mOv').classList.remove('open');document.body.style.overflow=''}
 </script>
 </body>
 </html>
-
-
